@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Desafío: Funciones de las Capas del Modelo OSI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .dragging {
+            opacity: 0.4;
+            transform: scale(0.95);
+        }
+        .drag-over {
+            border-color: #6366f1 !important;
+            background-color: rgba(99, 102, 241, 0.15) !important;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        .modal-animate {
+            animation: fadeIn 0.25s ease-out forwards;
+        }
+        .layer-shape {
+            border-radius: 8px;
+            transition: all 0.2s ease;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans select-none">
+
+    <!-- HEADER -->
+    <header class="bg-slate-900 border-b border-slate-800 py-4 px-6 shadow-md flex flex-wrap justify-between items-center gap-4">
+        <div>
+            <h1 class="text-2xl font-black tracking-wide text-indigo-400 flex items-center gap-2">
+                🌐 Desafío: Funciones del Modelo OSI
+            </h1>
+            <p class="text-xs text-slate-400">Arrastra la descripción correcta de la función a su respectiva capa del Modelo OSI.</p>
+        </div>
+        <div class="flex items-center gap-4">
+            <div class="bg-slate-900 px-4 py-2 rounded-xl border border-slate-800 text-sm flex items-center gap-3">
+                <div>
+                    <span class="text-slate-400">Colocadas:</span>
+                    <span id="placed-counter" class="font-bold text-indigo-400 ml-1">0 / 7</span>
+                </div>
+                <div class="border-l border-slate-700 pl-3">
+                    <span class="text-slate-400">Errores:</span>
+                    <span id="lives-counter" class="font-bold text-rose-400 ml-1">0 / 3</span>
+                </div>
+            </div>
+            <button onclick="resetGame()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-4 py-2 rounded-xl text-sm font-semibold transition flex items-center gap-1 shadow">
+                🔄 Reiniciar
+            </button>
+        </div>
+    </header>
+
+    <!-- MAIN CONTAINER -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        
+        <!-- ZONA DE TABLERO OSI (IZQUIERDA Y CENTRO - 8 COLUMNAS) -->
+        <div class="lg:col-span-8 bg-slate-900/80 backdrop-blur border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col gap-4">
+            <div class="text-center pb-2 border-b border-slate-800 flex flex-col gap-2">
+                <h2 class="text-lg font-black text-indigo-300 tracking-wider">MODELO OSI</h2>
+                <span class="text-xs text-slate-400">Asocia cada capa con su respectiva función</span>
+                
+                <!-- RECUADRO DE AVISO FIJO EN PANTALLA -->
+                <div id="game-alert-banner" class="w-full py-3 px-4 rounded-xl bg-slate-950 border border-slate-800 text-slate-400 text-sm font-bold shadow-lg flex items-center justify-center gap-2 transition-all">
+                    <span>💡</span> <span id="alert-message">Arrastra las tarjetas a su capa correspondiente</span>
+                </div>
+            </div>
+
+            <div id="osi-board" class="flex flex-col gap-3">
+                <!-- Fila Capa 7 -->
+                <div class="flex flex-col md:flex-row gap-3 items-stretch w-full">
+                    <div class="w-full md:w-1/3 bg-purple-700 text-white font-semibold text-xs px-3 py-3.5 rounded-lg flex items-center gap-2 shadow border border-purple-600 shrink-0">
+                        <span class="bg-purple-900 px-2 py-0.5 rounded text-[10px] font-bold">7</span> Aplicación
+                    </div>
+                    <div class="drop-slot flex-1 min-h-[56px] border-2 border-dashed border-slate-700 rounded-lg flex items-center justify-center p-2.5 bg-slate-950/50 transition-all text-xs font-semibold text-slate-500 text-center" data-slot-id="osi-7" data-expected="func-7">
+                        <span class="pointer-events-none">Ranura de función</span>
+                    </div>
+                </div>
+
+                <!-- Fila Capa 6 -->
+                <div class="flex flex-col md:flex-row gap-3 items-stretch w-full">
+                    <div class="w-full md:w-1/3 bg-blue-900 text-white font-semibold text-xs px-3 py-3.5 rounded-lg flex items-center gap-2 shadow border border-blue-800 shrink-0">
+                        <span class="bg-blue-950 px-2 py-0.5 rounded text-[10px] font-bold">6</span> Presentación
+                    </div>
+                    <div class="drop-slot flex-1 min-h-[56px] border-2 border-dashed border-slate-700 rounded-lg flex items-center justify-center p-2.5 bg-slate-950/50 transition-all text-xs font-semibold text-slate-500 text-center" data-slot-id="osi-6" data-expected="func-6">
+                        <span class="pointer-events-none">Ranura de función</span>
+                    </div>
+                </div>
+
+                <!-- Fila Capa 5 -->
+                <div class="flex flex-col md:flex-row gap-3 items-stretch w-full">
+                    <div class="w-full md:w-1/3 bg-amber-700 text-white font-semibold text-xs px-3 py-3.5 rounded-lg flex items-center gap-2 shadow border border-amber-600 shrink-0">
+                        <span class="bg-amber-900 px-2 py-0.5 rounded text-[10px] font-bold">5</span> Sesión
+                    </div>
+                    <div class="drop-slot flex-1 min-h-[56px] border-2 border-dashed border-slate-700 rounded-lg flex items-center justify-center p-2.5 bg-slate-950/50 transition-all text-xs font-semibold text-slate-500 text-center" data-slot-id="osi-5" data-expected="func-5">
+                        <span class="pointer-events-none">Ranura de función</span>
+                    </div>
+                </div>
+
+                <!-- Fila Capa 4 -->
+                <div class="flex flex-col md:flex-row gap-3 items-stretch w-full">
+                    <div class="w-full md:w-1/3 bg-red-700 text-white font-semibold text-xs px-3 py-3.5 rounded-lg flex items-center gap-2 shadow border border-red-600 shrink-0">
+                        <span class="bg-red-900 px-2 py-0.5 rounded text-[10px] font-bold">4</span> Transporte
+                    </div>
+                    <div class="drop-slot flex-1 min-h-[56px] border-2 border-dashed border-slate-700 rounded-lg flex items-center justify-center p-2.5 bg-slate-950/50 transition-all text-xs font-semibold text-slate-500 text-center" data-slot-id="osi-4" data-expected="func-4">
+                        <span class="pointer-events-none">Ranura de función</span>
+                    </div>
+                </div>
+
+                <!-- Fila Capa 3 -->
+                <div class="flex flex-col md:flex-row gap-3 items-stretch w-full">
+                    <div class="w-full md:w-1/3 bg-emerald-700 text-white font-semibold text-xs px-3 py-3.5 rounded-lg flex items-center gap-2 shadow border border-emerald-600 shrink-0">
+                        <span class="bg-emerald-900 px-2 py-0.5 rounded text-[10px] font-bold">3</span> Red
+                    </div>
+                    <div class="drop-slot flex-1 min-h-[56px] border-2 border-dashed border-slate-700 rounded-lg flex items-center justify-center p-2.5 bg-slate-950/50 transition-all text-xs font-semibold text-slate-500 text-center" data-slot-id="osi-3" data-expected="func-3">
+                        <span class="pointer-events-none">Ranura de función</span>
+                    </div>
+                </div>
+
+                <!-- Fila Capa 2 -->
+                <div class="flex flex-col md:flex-row gap-3 items-stretch w-full">
+                    <div class="w-full md:w-1/3 bg-slate-600 text-white font-semibold text-xs px-3 py-3.5 rounded-lg flex items-center gap-2 shadow border border-slate-500 shrink-0">
+                        <span class="bg-slate-800 px-2 py-0.5 rounded text-[10px] font-bold">2</span> Enlace de datos
+                    </div>
+                    <div class="drop-slot flex-1 min-h-[56px] border-2 border-dashed border-slate-700 rounded-lg flex items-center justify-center p-2.5 bg-slate-950/50 transition-all text-xs font-semibold text-slate-500 text-center" data-slot-id="osi-2" data-expected="func-2">
+                        <span class="pointer-events-none">Ranura de función</span>
+                    </div>
+                </div>
+
+                <!-- Fila Capa 1 -->
+                <div class="flex flex-col md:flex-row gap-3 items-stretch w-full">
+                    <div class="w-full md:w-1/3 bg-amber-500 text-slate-950 font-bold text-xs px-3 py-3.5 rounded-lg flex items-center gap-2 shadow border border-amber-400 shrink-0">
+                        <span class="bg-amber-700 text-white px-2 py-0.5 rounded text-[10px] font-bold">1</span> Física
+                    </div>
+                    <div class="drop-slot flex-1 min-h-[56px] border-2 border-dashed border-slate-700 rounded-lg flex items-center justify-center p-2.5 bg-slate-950/50 transition-all text-xs font-semibold text-slate-500 text-center" data-slot-id="osi-1" data-expected="func-1">
+                        <span class="pointer-events-none">Ranura de función</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- BANCO DE TARJETAS DE FUNCIONES (DERECHA - 4 COLUMNAS) -->
+        <div class="lg:col-span-4 bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col gap-4">
+            <div class="flex justify-between items-center">
+                <h2 class="text-sm font-bold uppercase tracking-wider text-indigo-300">Banco de Funciones</h2>
+                <span class="text-xs text-slate-400">Arrastra al tablero</span>
+            </div>
+
+            <div id="card-bank" class="bank-drop-zone min-h-[480px] bg-slate-950/70 border-2 border-dashed border-slate-800 rounded-xl p-3 flex flex-col gap-3 overflow-y-auto max-h-[580px]">
+                <!-- Tarjetas cargadas dinámicamente -->
+            </div>
+        </div>
+
+    </main>
+
+    <!-- MODAL DE PUNTAJE FINAL -->
+    <div id="result-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 shadow-2xl modal-animate flex flex-col gap-5">
+            <div class="text-center flex flex-col items-center gap-2">
+                <div id="modal-icon" class="w-14 h-14 bg-amber-500/20 text-amber-400 rounded-2xl flex items-center justify-center text-3xl font-bold border border-amber-500/30 overflow-hidden">
+                    ❌
+                </div>
+                <h3 id="modal-title" class="text-xl font-bold text-slate-100">Juego Terminado</h3>
+                <p id="modal-subtitle" class="text-xs text-rose-400 font-semibold">Has completado el tablero.</p>
+            </div>
+
+            <div class="grid grid-cols-3 gap-3 text-center">
+                <div class="bg-emerald-500/10 border border-emerald-500/30 rounded-2xl p-3">
+                    <span class="block text-xs font-medium text-emerald-400 uppercase">Aciertos</span>
+                    <span id="modal-correct" class="text-2xl font-black text-emerald-400">0</span>
+                </div>
+                <div class="bg-rose-500/10 border border-rose-500/30 rounded-2xl p-3">
+                    <span class="block text-xs font-medium text-rose-400 uppercase">Errores</span>
+                    <span id="modal-errors" class="text-2xl font-black text-rose-400">0</span>
+                </div>
+                <div class="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-3">
+                    <span class="block text-xs font-medium text-amber-400 uppercase">Pendientes</span>
+                    <span id="modal-pending" class="text-2xl font-black text-amber-400">0</span>
+                </div>
+            </div>
+
+            <div class="bg-slate-950/60 border border-slate-800 rounded-xl p-3 flex justify-between items-center text-sm">
+                <span class="text-slate-400">Precisión de lo colocado:</span>
+                <span id="modal-accuracy" class="font-bold text-indigo-400">0%</span>
+            </div>
+
+            <div class="flex gap-3">
+                <button onclick="resetGame(); closeModal();" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3 px-4 rounded-xl transition shadow">
+                    🔄 Jugar de Nuevo
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPT DE INTERACTIVIDAD -->
+    <script>
+        const initialCards = [
+            { id: 'card-func-7', expected: 'func-7', color: 'bg-slate-800 border-slate-600 text-slate-200 text-xs font-medium p-3', text: 'Interactúa directamente con el usuario' },
+            { id: 'card-func-6', expected: 'func-6', color: 'bg-slate-800 border-slate-600 text-slate-200 text-xs font-medium p-3', text: 'Representación de los datos y encriptación' },
+            { id: 'card-func-5', expected: 'func-5', color: 'bg-slate-800 border-slate-600 text-slate-200 text-xs font-medium p-3', text: 'Responsable de la apertura y cierre de una conexión' },
+            { id: 'card-func-4', expected: 'func-4', color: 'bg-slate-800 border-slate-600 text-slate-200 text-xs font-medium p-3', text: 'Garantiza que la información llegue completa y en orden' },
+            { id: 'card-func-3', expected: 'func-3', color: 'bg-slate-800 border-slate-600 text-slate-200 text-xs font-medium p-3', text: 'Define la ruta que deben seguir los datos hacia su destino' },
+            { id: 'card-func-2', expected: 'func-2', color: 'bg-slate-800 border-slate-600 text-slate-200 text-xs font-medium p-3', text: 'Transmite los datos entre dispositivos conectados directamente' },
+            { id: 'card-func-1', expected: 'func-1', color: 'bg-slate-800 border-slate-600 text-slate-200 text-xs font-medium p-3', text: 'Transmisión de bits en un medio físico' }
+        ];
+
+        let draggedCardId = null;
+        let mistakeCount = 0;
+        let isGameOver = false;
+
+        function initGame() {
+            mistakeCount = 0;
+            isGameOver = false;
+            document.getElementById('lives-counter').innerText = `${mistakeCount} / 3`;
+            
+            const banner = document.getElementById('game-alert-banner');
+            banner.className = "w-full py-3 px-4 rounded-xl bg-slate-950 border border-slate-800 text-slate-400 text-sm font-bold shadow-lg flex items-center justify-center gap-2 transition-all";
+            banner.innerHTML = `<span>💡</span> <span id="alert-message">Arrastra las tarjetas a su capa correspondiente</span>`;
+
+            const bank = document.getElementById('card-bank');
+            bank.innerHTML = '';
+            
+            document.querySelectorAll('.drop-slot').forEach(slot => {
+                slot.innerHTML = `<span class="pointer-events-none">Ranura de función</span>`;
+                slot.className = `drop-slot flex-1 min-h-[56px] border-2 border-dashed border-slate-700 rounded-lg flex items-center justify-center p-2.5 bg-slate-950/50 transition-all text-xs font-semibold text-slate-500 text-center`;
+            });
+
+            const shuffledCards = [...initialCards].sort(() => Math.random() - 0.5);
+            shuffledCards.forEach(cardData => {
+                bank.appendChild(createCardElement(cardData));
+            });
+
+            updateCounter();
+        }
+
+        function createCardElement(cardData) {
+            const card = document.createElement('div');
+            card.id = cardData.id;
+            card.className = `w-full min-h-[48px] rounded-lg border shadow flex items-center justify-center text-xs p-3 text-center cursor-grab active:cursor-grabbing transition transform hover:scale-[1.01] layer-shape ${cardData.color}`;
+            card.draggable = true;
+            card.dataset.cardId = cardData.id;
+            card.dataset.expected = cardData.expected;
+            card.innerText = cardData.text;
+
+            card.addEventListener('dragstart', (e) => {
+                if (isGameOver) return;
+                draggedCardId = cardData.id;
+                e.dataTransfer.setData('text/plain', cardData.id);
+                setTimeout(() => card.classList.add('dragging'), 0);
+            });
+
+            card.addEventListener('dragend', () => {
+                card.classList.remove('dragging');
+                draggedCardId = null;
+                document.querySelectorAll('.drop-slot, .bank-drop-zone').forEach(s => s.classList.remove('drag-over'));
+            });
+
+            return card;
+        }
+
+        const dropZones = document.querySelectorAll('.drop-slot, .bank-drop-zone');
+
+        dropZones.forEach(zone => {
+            zone.addEventListener('dragover', (e) => {
+                if (isGameOver) return;
+                e.preventDefault();
+                zone.classList.add('drag-over');
+            });
+
+            zone.addEventListener('dragleave', () => {
+                zone.classList.remove('drag-over');
+            });
+
+            zone.addEventListener('drop', (e) => {
+                if (isGameOver) return;
+                e.preventDefault();
+                zone.classList.remove('drag-over');
+
+                const cardId = e.dataTransfer.getData('text/plain') || draggedCardId;
+                const cardElement = document.getElementById(cardId);
+                if (!cardElement) return;
+
+                if (zone.classList.contains('bank-drop-zone')) {
+                    zone.appendChild(cardElement);
+                    removeExistingFeedback(cardElement);
+                    updateCounter();
+                    return;
+                }
+
+                const existingCard = zone.querySelector('.layer-shape, [draggable="true"]');
+                const bank = document.getElementById('card-bank');
+                if (existingCard && existingCard !== cardElement) {
+                    bank.appendChild(existingCard);
+                    removeExistingFeedback(existingCard);
+                }
+
+                const placeholder = zone.querySelector('span.pointer-events-none');
+                if (placeholder) placeholder.remove();
+
+                zone.appendChild(cardElement);
+
+                validateDrop(zone, cardElement);
+                updateCounter();
+                checkCompletion();
+            });
+        });
+
+        function validateDrop(zone, card) {
+            const expected = zone.dataset.expected;
+            const cardExpected = card.dataset.expected;
+            const banner = document.getElementById('game-alert-banner');
+
+            // SVG de la carita de la locura (errores)
+            const sillyEmojiSvg = `<svg class="inline-block h-5 w-5 shrink-0 align-middle mx-1" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="256" cy="256" r="256" fill="#ffcc4d"/>
+                <path d="M473.4 128.5c-20.7-36.8-51-67.1-87.8-87.8-36.8-20.7-77.9-31.6-119.8-31.6-1.7 0-3.3 0-5 0v512c1.7 0 3.3 0 5 0 41.9 0 83-10.9 119.8-31.6 36.8-20.7 67.1-51 87.8-87.8 20.7-36.8 31.6-77.9 31.6-119.8 0-41.9-10.9-83-31.6-119.8z" fill="#f4bb44"/>
+                <circle cx="150" cy="190" r="60" fill="#fff"/>
+                <circle cx="130" cy="175" r="25" fill="#292f33"/>
+                <circle cx="340" cy="230" r="65" fill="#fff"/>
+                <circle cx="330" cy="220" r="22" fill="#292f33"/>
+                <path d="M110 320c25 60 120 70 180 30 18-12 35-30 45-50-30 45-90 55-135 45-30-7-60-15-90-25z" fill="#292f33"/>
+                <path d="M290 350c30 40 85 50 120 20 25-22 35-65 20-95-20 40-75 60-115 55-8-1-17-3-25-6 0 8 0 16 0 26z" fill="#ea596e"/>
+            </svg>`;
+
+            // SVG de la carita guiñando el ojo (aciertos)
+            const winkingEmojiSvg = `<svg class="inline-block h-5 w-5 shrink-0 align-middle mx-1" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="256" cy="256" r="256" fill="#ffcc4d"/>
+                <path d="M473.4 128.5c-20.7-36.8-51-67.1-87.8-87.8-36.8-20.7-77.9-31.6-119.8-31.6-1.7 0-3.3 0-5 0v512c1.7 0 3.3 0 5 0 41.9 0 83-10.9 119.8-31.6 36.8-20.7 67.1-51 87.8-87.8 20.7-36.8 31.6-77.9 31.6-119.8 0-41.9-10.9-83-31.6-119.8z" fill="#f4bb44"/>
+                <path d="M168 152c-21.3 0-38.6 17.3-38.6 38.6 0 10.6 8.6 19.3 19.3 19.3s19.3-8.6 19.3-19.3c0-4 3.2-7.2 7.2-7.2s7.2 3.2 7.2 7.2c0 19.5 15.8 35.3 35.3 35.3s35.3-15.8 35.3-35.3c0-21.3-17.3-38.6-38.6-38.6z" fill="#664e27"/>
+                <path d="M312 176c-10.6 0-19.3 8.6-19.3 19.3 0 21.3 17.3 38.6 38.6 38.6s38.6-17.3 38.6-38.6c0-10.6-8.6-19.3-19.3-19.3s-19.3 8.6-19.3 19.3c0 4-3.2 7.2-7.2 7.2s-7.2-3.2-7.2-7.2c0-10.6-8.6-19.3-19.3-19.3z" fill="#664e27"/>
+                <path d="M140 290c0 0 50 70 116 70s116-70 116-70H140z" fill="#664e27"/>
+            </svg>`;
+
+            if (expected === cardExpected) {
+                slotIsCorrect(zone);
+                banner.className = "w-full py-3 px-4 rounded-xl bg-emerald-600 text-white text-sm font-bold shadow-lg flex items-center justify-center gap-1";
+                banner.innerHTML = `Estuviste bien, sigue ${winkingEmojiSvg}`;
+            } else {
+                slotIsError(zone);
+                mistakeCount++;
+                document.getElementById('lives-counter').innerText = `${mistakeCount} / 3`;
+
+                if (mistakeCount === 1) {
+                    banner.className = "w-full py-3 px-4 rounded-xl bg-rose-600 text-white text-sm font-bold shadow-lg flex items-center justify-center gap-1 animate-bounce";
+                    banner.innerHTML = `Te equivocaste Primera Oportunidad ${sillyEmojiSvg}`;
+                } else if (mistakeCount === 2) {
+                    banner.className = "w-full py-3 px-4 rounded-xl bg-rose-600 text-white text-sm font-bold shadow-lg flex items-center justify-center gap-1 animate-bounce";
+                    banner.innerHTML = `Te equivocaste Segunda Oportunidad ${sillyEmojiSvg}`;
+                } else if (mistakeCount >= 3) {
+                    isGameOver = true;
+                    banner.className = "w-full py-3 px-4 rounded-xl bg-rose-900 border border-rose-600 text-rose-200 text-sm font-bold shadow-lg flex items-center justify-center gap-1";
+                    banner.innerHTML = `Te equivocaste Tercera Oportunidad ${sillyEmojiSvg}`;
+                    
+                    setTimeout(() => {
+                        calculateFinalResults();
+                    }, 500);
+                }
+            }
+        }
+
+        function slotIsCorrect(slot) {
+            slot.classList.remove('border-slate-700', 'bg-slate-950/50', 'border-rose-500', 'bg-rose-950/40');
+            slot.classList.add('border-emerald-500', 'bg-emerald-950/40');
+        }
+
+        function slotIsError(slot) {
+            slot.classList.remove('border-slate-700', 'bg-slate-950/50', 'border-emerald-500', 'bg-emerald-950/40');
+            slot.classList.add('border-rose-500', 'bg-rose-950/40');
+        }
+
+        function removeExistingFeedback(card) {
+            const parent = card.closest('.drop-slot');
+            if (parent) {
+                parent.className = `drop-slot flex-1 min-h-[56px] border-2 border-dashed border-slate-700 rounded-lg flex items-center justify-center p-2.5 bg-slate-950/50 transition-all text-xs font-semibold text-slate-500 text-center`;
+            }
+        }
+
+        function updateCounter() {
+            const totalPlaced = document.querySelectorAll('.drop-slot .layer-shape, .drop-slot [draggable="true"]').length;
+            document.getElementById('placed-counter').innerText = `${totalPlaced} / 7`;
+        }
+
+        function checkCompletion() {
+            if (isGameOver) return;
+
+            let placedCount = 0;
+            document.querySelectorAll('.drop-slot').forEach(slot => {
+                const card = slot.querySelector('.layer-shape, [draggable="true"]');
+                if (card) placedCount++;
+            });
+
+            if (placedCount === 7) {
+                setTimeout(() => {
+                    calculateFinalResults();
+                }, 400);
+            }
+        }
+
+        function calculateFinalResults() {
+            let correct = 0;
+            let errors = 0;
+            let placedCount = 0;
+            const totalItems = 7;
+
+            document.querySelectorAll('.drop-slot').forEach(slot => {
+                const card = slot.querySelector('.layer-shape, [draggable="true"]');
+                if (card) {
+                    placedCount++;
+                    if (slot.dataset.expected === card.dataset.expected) {
+                        correct++;
+                    } else {
+                        errors++;
+                    }
+                }
+            });
+
+            const pending = totalItems - placedCount;
+            const accuracy = placedCount > 0 ? Math.round((correct / placedCount) * 100) : 0;
+
+            showFinalModal(correct, errors, pending, accuracy);
+        }
+
+        function showFinalModal(correct, errors, pending, accuracy) {
+            isGameOver = true;
+            const titleElem = document.getElementById('modal-title');
+            const subtitleElem = document.getElementById('modal-subtitle');
+            const iconElem = document.getElementById('modal-icon');
+
+            const happyGrinEmojiSvg = `<svg class="w-10 h-10 text-amber-400" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="256" cy="256" r="256" fill="#ffcc4d"/>
+                <path d="M473.4 128.5c-20.7-36.8-51-67.1-87.8-87.8-36.8-20.7-77.9-31.6-119.8-31.6-1.7 0-3.3 0-5 0v512c1.7 0 3.3 0 5 0 41.9 0 83-10.9 119.8-31.6 36.8-20.7 67.1-51 87.8-87.8 20.7-36.8 31.6-77.9 31.6-119.8 0-41.9-10.9-83-31.6-119.8z" fill="#f4bb44"/>
+                <path d="M160 170c-25 0-45 20-45 45 0 10 20 10 20 0 0-15 12-25 25-25 10 0 10-20 0-20zm192 0c-25 0-45 20-45 45 0 10 20 10 20 0 0-15 12-25 25-25 10 0 10-20 0-20z" fill="#664e27"/>
+                <path d="M120 280c0 0 45 130 136 130s136-130 136-130H120z" fill="#664e27"/>
+                <path d="M140 295c0 0 35 95 116 95s116-95 116-95H140z" fill="#fff"/>
+            </svg>`;
+
+            if (errors <= 2) {
+                titleElem.innerText = correct === 7 ? "🎉 ¡Felicitaciones!" : "Juego Terminado";
+                subtitleElem.innerText = `Has completado el tablero con ${errors} error(es).`;
+                iconElem.className = "w-14 h-14 bg-amber-500/20 text-amber-400 rounded-2xl flex items-center justify-center border border-amber-500/30 overflow-hidden";
+                iconElem.innerHTML = happyGrinEmojiSvg;
+            } else {
+                titleElem.innerText = "🛑 Juego Terminado";
+                subtitleElem.innerText = `Has completado el tablero con ${errors} error(es).`;
+                iconElem.className = "w-14 h-14 bg-rose-500/20 text-rose-400 rounded-2xl flex items-center justify-center text-2xl font-bold border border-rose-500/30";
+                iconElem.innerHTML = "❌";
+            }
+
+            document.getElementById('modal-correct').innerText = correct;
+            document.getElementById('modal-errors').innerText = errors;
+            document.getElementById('modal-pending').innerText = pending;
+            document.getElementById('modal-accuracy').innerText = accuracy + '%';
+            document.getElementById('result-modal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('result-modal').classList.add('hidden');
+        }
+
+        function resetGame() {
+            initGame();
+        }
+
+        window.onload = initGame;
+    </script>
+</body>
+</html>
