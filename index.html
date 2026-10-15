@@ -24,6 +24,7 @@
         .layer-shape {
             border-radius: 8px;
             transition: all 0.2s ease;
+            touch-action: none;
         }
     </style>
 </head>
@@ -35,7 +36,7 @@
             <h1 class="text-2xl font-black tracking-wide text-indigo-400 flex items-center gap-2">
                 🌐 Desafío: Funciones del Modelo OSI
             </h1>
-            <p class="text-xs text-slate-400">Arrastra la descripción correcta de la función a su respectiva capa del Modelo OSI.</p>
+            <p class="text-xs text-slate-400">Arrastra o toca la descripción correcta de la función a su respectiva capa del Modelo OSI.</p>
         </div>
         <div class="flex items-center gap-4">
             <div class="bg-slate-900 px-4 py-2 rounded-xl border border-slate-800 text-sm flex items-center gap-3">
@@ -65,7 +66,7 @@
                 
                 <!-- RECUADRO DE AVISO FIJO EN PANTALLA -->
                 <div id="game-alert-banner" class="w-full py-3 px-4 rounded-xl bg-slate-950 border border-slate-800 text-slate-400 text-sm font-bold shadow-lg flex items-center justify-center gap-2 transition-all">
-                    <span>💡</span> <span id="alert-message">Arrastra las tarjetas a su capa correspondiente</span>
+                    <span>💡</span> <span id="alert-message">Arrastra o toca las tarjetas a su capa correspondiente</span>
                 </div>
             </div>
 
@@ -146,7 +147,7 @@
         <div class="lg:col-span-4 bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col gap-4">
             <div class="flex justify-between items-center">
                 <h2 class="text-sm font-bold uppercase tracking-wider text-indigo-300">Banco de Funciones</h2>
-                <span class="text-xs text-slate-400">Arrastra al tablero</span>
+                <span class="text-xs text-slate-400">Toca o arrastra</span>
             </div>
 
             <div id="card-bank" class="bank-drop-zone min-h-[480px] bg-slate-950/70 border-2 border-dashed border-slate-800 rounded-xl p-3 flex flex-col gap-3 overflow-y-auto max-h-[580px]">
@@ -210,15 +211,17 @@
         let draggedCardId = null;
         let mistakeCount = 0;
         let isGameOver = false;
+        let activeTouchCard = null;
 
         function initGame() {
             mistakeCount = 0;
             isGameOver = false;
+            activeTouchCard = null;
             document.getElementById('lives-counter').innerText = `${mistakeCount} / 3`;
             
             const banner = document.getElementById('game-alert-banner');
             banner.className = "w-full py-3 px-4 rounded-xl bg-slate-950 border border-slate-800 text-slate-400 text-sm font-bold shadow-lg flex items-center justify-center gap-2 transition-all";
-            banner.innerHTML = `<span>💡</span> <span id="alert-message">Arrastra las tarjetas a su capa correspondiente</span>`;
+            banner.innerHTML = `<span>💡</span> <span id="alert-message">Arrastra o toca las tarjetas a su capa correspondiente</span>`;
 
             const bank = document.getElementById('card-bank');
             bank.innerHTML = '';
@@ -245,6 +248,7 @@
             card.dataset.expected = cardData.expected;
             card.innerText = cardData.text;
 
+            // Eventos de Mouse (PC)
             card.addEventListener('dragstart', (e) => {
                 if (isGameOver) return;
                 draggedCardId = cardData.id;
@@ -257,6 +261,24 @@
                 draggedCardId = null;
                 document.querySelectorAll('.drop-slot, .bank-drop-zone').forEach(s => s.classList.remove('drag-over'));
             });
+
+            // Eventos Táctiles (Celulares y Tablets): Permitir tocar para seleccionar y soltar en ranuras
+            card.addEventListener('touchstart', (e) => {
+                if (isGameOver) return;
+                e.preventDefault();
+                
+                // Si ya hay una seleccionada, desmarcarla
+                if (activeTouchCard) {
+                    activeTouchCard.classList.remove('ring-4', 'ring-indigo-400', 'scale-105');
+                }
+
+                activeTouchCard = card;
+                card.classList.add('ring-4', 'ring-indigo-400', 'scale-105');
+                
+                const banner = document.getElementById('game-alert-banner');
+                banner.className = "w-full py-3 px-4 rounded-xl bg-indigo-950 border border-indigo-600 text-indigo-200 text-sm font-bold shadow-lg flex items-center justify-center gap-2";
+                banner.innerHTML = `<span>👆</span> <span>Tarjeta seleccionada. Toca la ranura donde deseas colocarla.</span>`;
+            }, { passive: false });
 
             return card;
         }
@@ -283,37 +305,49 @@
                 const cardElement = document.getElementById(cardId);
                 if (!cardElement) return;
 
-                if (zone.classList.contains('bank-drop-zone')) {
-                    zone.appendChild(cardElement);
-                    removeExistingFeedback(cardElement);
-                    updateCounter();
-                    return;
-                }
+                processCardPlacement(zone, cardElement);
+            });
 
-                const existingCard = zone.querySelector('.layer-shape, [draggable="true"]');
-                const bank = document.getElementById('card-bank');
-                if (existingCard && existingCard !== cardElement) {
-                    bank.appendChild(existingCard);
-                    removeExistingFeedback(existingCard);
-                }
+            // Soporte de toque para celulares (tocar ranura con tarjeta seleccionada)
+            zone.addEventListener('click', () => {
+                if (isGameOver || !activeTouchCard) return;
 
-                const placeholder = zone.querySelector('span.pointer-events-none');
-                if (placeholder) placeholder.remove();
-
-                zone.appendChild(cardElement);
-
-                validateDrop(zone, cardElement);
-                updateCounter();
-                checkCompletion();
+                processCardPlacement(zone, activeTouchCard);
+                activeTouchCard.classList.remove('ring-4', 'ring-indigo-400', 'scale-105');
+                activeTouchCard = null;
             });
         });
+
+        function processCardPlacement(zone, cardElement) {
+            if (zone.classList.contains('bank-drop-zone')) {
+                zone.appendChild(cardElement);
+                removeExistingFeedback(cardElement);
+                updateCounter();
+                return;
+            }
+
+            const existingCard = zone.querySelector('.layer-shape, [draggable="true"]');
+            const bank = document.getElementById('card-bank');
+            if (existingCard && existingCard !== cardElement) {
+                bank.appendChild(existingCard);
+                removeExistingFeedback(existingCard);
+            }
+
+            const placeholder = zone.querySelector('span.pointer-events-none');
+            if (placeholder) placeholder.remove();
+
+            zone.appendChild(cardElement);
+
+            validateDrop(zone, cardElement);
+            updateCounter();
+            checkCompletion();
+        }
 
         function validateDrop(zone, card) {
             const expected = zone.dataset.expected;
             const cardExpected = card.dataset.expected;
             const banner = document.getElementById('game-alert-banner');
 
-            // SVG de la carita de la locura (errores)
             const sillyEmojiSvg = `<svg class="inline-block h-5 w-5 shrink-0 align-middle mx-1" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
                 <circle cx="256" cy="256" r="256" fill="#ffcc4d"/>
                 <path d="M473.4 128.5c-20.7-36.8-51-67.1-87.8-87.8-36.8-20.7-77.9-31.6-119.8-31.6-1.7 0-3.3 0-5 0v512c1.7 0 3.3 0 5 0 41.9 0 83-10.9 119.8-31.6 36.8-20.7 67.1-51 87.8-87.8 20.7-36.8 31.6-77.9 31.6-119.8 0-41.9-10.9-83-31.6-119.8z" fill="#f4bb44"/>
@@ -325,7 +359,6 @@
                 <path d="M290 350c30 40 85 50 120 20 25-22 35-65 20-95-20 40-75 60-115 55-8-1-17-3-25-6 0 8 0 16 0 26z" fill="#ea596e"/>
             </svg>`;
 
-            // SVG de la carita guiñando el ojo (aciertos)
             const winkingEmojiSvg = `<svg class="inline-block h-5 w-5 shrink-0 align-middle mx-1" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
                 <circle cx="256" cy="256" r="256" fill="#ffcc4d"/>
                 <path d="M473.4 128.5c-20.7-36.8-51-67.1-87.8-87.8-36.8-20.7-77.9-31.6-119.8-31.6-1.7 0-3.3 0-5 0v512c1.7 0 3.3 0 5 0 41.9 0 83-10.9 119.8-31.6 36.8-20.7 67.1-51 87.8-87.8 20.7-36.8 31.6-77.9 31.6-119.8 0-41.9-10.9-83-31.6-119.8z" fill="#f4bb44"/>
